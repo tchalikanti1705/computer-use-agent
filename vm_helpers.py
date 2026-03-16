@@ -66,3 +66,9 @@ def scroll_down(amount: int = 3, container_name: str = CONTAINER_NAME):
 def scroll_up(amount: int = 3, container_name: str = CONTAINER_NAME):
     for _ in range(amount):
         docker_exec_with_display("xdotool click 4", container_name=container_name)
+
+
+def save_screenshot_local(path: str = "latest_screen.png", container_name: str = CONTAINER_NAME):
+    png = capture_screenshot(container_name=container_name)
+    with open(path, "wb") as f:
+        f.write(png)

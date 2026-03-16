@@ -4,6 +4,9 @@ import time
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from safety import is_allowed_url, text_looks_risky, confirm_risky_action
+from vm_helpers import save_screenshot_local
+
 from vm_helpers import (
     capture_screenshot,
     click,
@@ -83,10 +86,36 @@ def handle_keypress(keys):
         keypress(combo)
 
 
+
+def maybe_block_action(action):
+    action_type = aget(action, "type")
+
+    if action_type == "type":
+        text = aget(action, "text", "")
+        if text.startswith("http://") or text.startswith("https://"):
+            if not is_allowed_url(text):
+                raise ValueError(f"Blocked navigation to non-allowlisted URL: {text}")
+
+        if text_looks_risky(text):
+            ok = confirm_risky_action(f"Model wants to type potentially risky text: {text!r}")
+            if not ok:
+                raise ValueError("User declined risky type action.")
+
+    elif action_type == "keypress":
+        keys = [str(k).lower() for k in aget(action, "keys", [])]
+        dangerous = {"return"}
+        if any(k in dangerous for k in keys):
+            ok = confirm_risky_action(f"Model wants to press keys: {keys}")
+            if not ok:
+                raise ValueError("User declined risky keypress.")
+
+
+
+
 def handle_computer_actions(actions):
     for action in actions:
         print("ACTION:", action_to_log(action))
-
+        maybe_block_action(action)
         action_type = aget(action, "type")
 
         if action_type == "click":
@@ -204,7 +233,10 @@ def computer_use_loop(user_message: str):
         actions = get_actions(computer_call)
         handle_computer_actions(actions)
 
-        screenshot_bytes = capture_screenshot()
+        save_screenshot_local("latest_screen.png")
+        with open("latest_screen.png", "rb") as f:
+            screenshot_bytes = f.read()
+            
         screenshot_base64 = base64.b64encode(screenshot_bytes).decode("utf-8")
 
         response = client.responses.create(
