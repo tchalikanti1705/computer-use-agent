@@ -16,6 +16,7 @@ from vm_helpers import (
     scroll_down,
     scroll_up,
     type_text,
+    ensure_firefox_running,
 )
 
 load_dotenv()
@@ -215,6 +216,8 @@ def get_actions(computer_call):
 
 
 def computer_use_loop(user_message: str):
+    ensure_firefox_running()
+    save_screenshot_local("latest_screen.png")
     response = client.responses.create(
         model="gpt-5.4",
         tools=[{"type": "computer"}],
@@ -236,7 +239,7 @@ def computer_use_loop(user_message: str):
         save_screenshot_local("latest_screen.png")
         with open("latest_screen.png", "rb") as f:
             screenshot_bytes = f.read()
-            
+
         screenshot_base64 = base64.b64encode(screenshot_bytes).decode("utf-8")
 
         response = client.responses.create(

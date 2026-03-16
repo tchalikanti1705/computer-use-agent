@@ -72,3 +72,22 @@ def save_screenshot_local(path: str = "latest_screen.png", container_name: str =
     png = capture_screenshot(container_name=container_name)
     with open(path, "wb") as f:
         f.write(png)
+
+
+def launch_firefox(container_name: str = CONTAINER_NAME):
+    docker_exec_with_display("nohup firefox >/tmp/firefox.log 2>&1 &", container_name=container_name)
+
+
+def is_firefox_running(container_name: str = CONTAINER_NAME) -> bool:
+    try:
+        output = docker_exec("pgrep -a firefox", container_name=container_name)
+        return bool(output.strip())
+    except Exception:
+        return False
+
+
+def ensure_firefox_running(container_name: str = CONTAINER_NAME, wait_seconds: int = 3):
+    if not is_firefox_running(container_name=container_name):
+        launch_firefox(container_name=container_name)
+        import time
+        time.sleep(wait_seconds)
