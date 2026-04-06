@@ -3,6 +3,7 @@ import os
 import time
 from dotenv import load_dotenv
 from openai import OpenAI
+import numpy
 
 from safety import is_allowed_url, text_looks_risky, confirm_risky_action
 from vm_helpers import save_screenshot_local
